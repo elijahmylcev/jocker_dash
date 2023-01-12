@@ -1,3 +1,4 @@
 .env
-/jocker_venv
-*/__pycache__
+jocker_venv/
+__pycache__/
+
