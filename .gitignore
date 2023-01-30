@@ -1,4 +1,4 @@
 .env
 jocker_venv/
 __pycache__/
-
+jupyter/
