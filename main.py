@@ -12,5 +12,11 @@ from functions import get_df_from_table, get_agents
 # - `database_name` - имя базы данных, к которой мы хотим подключиться
 engine = create_engine(f"mysql+pymysql://{USERNAME}:{PASSWORD}@{HOST}:{PORT}/{DATABASE_NAME}")
 
+# Time intercal
+start = datetime.strptime('2023-01-01', '%Y-%m-%d')
+end = datetime.strptime('2023-01-30', '%Y-%m-%d')
+now = datetime.now().strftime("%Y-%m-%d")
+print(f'start - {start}; \nend - {end} \nnow - {now}')
+
 deals = get_df_from_table('meetings', engine)
 deals.to_csv('./jupyter/meetings.csv')
