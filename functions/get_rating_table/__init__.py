@@ -1,0 +1,1 @@
+from .get_rating_table import get_rating_table
