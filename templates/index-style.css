@@ -1,0 +1,15 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  border: 0;
+}
+
+.form__login {
+  margin: 50px auto;
+  border: 1px solid gray;
+  padding: 30px;
+}
+
+footer {
+  text-align: center;
+}

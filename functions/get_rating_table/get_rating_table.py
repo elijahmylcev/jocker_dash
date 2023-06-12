@@ -35,7 +35,7 @@ def get_rating_table(engine, start, end, now):
   result_prs = df_deals_in_progress.merge(df_deals_in_success_all_time, how='outer', on='user_id')
   result_prs = result_prs.assign(convers=round((result_prs["progress"] + result_prs["compleat"]) / result_prs["compleat"], 2))
 
-  # Успешные сделкии за указанный год и месяц
+  # Успешные сделки за указанный год и месяц
   df_deals_success = df_deals[df_deals['complete'] == 1]
   df_deals_success = df_deals_success[(df_deals_success['status'] == 6) &
                                       (df_deals_success['complete_date'] >= start) &
@@ -64,8 +64,8 @@ def get_rating_table(engine, start, end, now):
 
   # Работа с текущим интервалом
   # Подсчет выполненных и просроченных задач
-  df_tasks_i_compleate = df_tasks_interval.dropna(subset=['complete_date'])
-  df_tasks_i_success = df_tasks_i_compleate.groupby('worker_id').size().reset_index(name='complete_tasks')
+  df_tasks_i_complete = df_tasks_interval.dropna(subset=['complete_date'])
+  df_tasks_i_success = df_tasks_i_complete.groupby('worker_id').size().reset_index(name='complete_tasks')
 
   # Просроченных
   # Оговорка - считаются таковыми и в сравнении по часам
@@ -81,20 +81,20 @@ def get_rating_table(engine, start, end, now):
                                                     & (df_tasks_all_time['complete_date'].isna()
                                                     | (df_tasks_all_time['end'] < df_tasks_all_time['complete_date']))
                                                     ]
-  df_tasks_all_time_expired_res = df_tasks_all_time_expired.groupby('worker_id').size().reset_index(name='expired_allt_tasks')
+  df_tasks_all_time_expired_res = df_tasks_all_time_expired.groupby('worker_id').size().reset_index(name='expired_all_time_tasks')
 
   # Назначено за все время
-  df_tasks_all_time_assigned = df_tasks_all_time.groupby('worker_id').size().reset_index(name='assigned_allt_tasks')
+  df_tasks_all_time_assigned = df_tasks_all_time.groupby('worker_id').size().reset_index(name='assigned_all_time_tasks')
 
-  # Итого процент просроч за все время (отношение просроченных задач к общему числу)
-  df_tasks_all_time_expired_perc = df_tasks_all_time_assigned.merge(df_tasks_all_time_expired_res, how='outer', on='worker_id')
-  df_tasks_all_time_expired_perc = df_tasks_all_time_expired_perc.assign(perc=round((df_tasks_all_time_expired_perc["expired_allt_tasks"]
-                                                                                      / df_tasks_all_time_expired_perc["assigned_allt_tasks"])
+  # Итого процент просроченных за все время (отношение просроченных задач к общему числу)
+  df_tasks_all_time_expired_percent = df_tasks_all_time_assigned.merge(df_tasks_all_time_expired_res, how='outer', on='worker_id')
+  df_tasks_all_time_expired_percent = df_tasks_all_time_expired_percent.assign(percent=round((df_tasks_all_time_expired_percent["expired_all_time_tasks"]
+                                                                                      / df_tasks_all_time_expired_percent["assigned_all_time_tasks"])
                                                                                     * 100, 2))
 
   # df_tasks_all_time.rename(columns={'worker_id': 'user_id'}, inplace=True)
 
-  df_tasks_all_time_expired_perc.rename(columns={'worker_id': 'user_id'}, inplace=True)
+  df_tasks_all_time_expired_percent.rename(columns={'worker_id': 'user_id'}, inplace=True)
   
   # Встречи/Показы - complete - состоявшиеся 
   df_meetings = get_df_from_table('meetings', engine)
@@ -107,9 +107,9 @@ def get_rating_table(engine, start, end, now):
 
   df_meetings_complete = df_meetings_complete.groupby('user_id').size().reset_index(name='complete_meet')
   # All Join
-  rating_df = df_agents.merge(result_deals, how='outer', on='user_id')
-  rating_df = rating_df.merge(df_tasks_all_time_expired_perc, how='outer', on='user_id')
+  # rating_df = df_agents.merge(result_deals, how='outer', on='user_id')
+  rating_df = result_deals.merge(df_tasks_all_time_expired_percent, how='outer', on='user_id')
   rating_df = rating_df.merge(df_meetings_complete, how='outer', on='user_id')
 
-  return rating_df
+  return rating_df[['username', 'success', 'recom', 'convers', 'assigned_all_time_tasks', 'expired_all_time_tasks', 'percent', 'complete_meet']]
   
