@@ -18,18 +18,19 @@ class KPI:
         self.df = pd.read_csv('components/KPI/KPI_result.csv')
         available_agents = get_agents('fos_user', self.engine)
         available_metrics = self.df.columns
+        options_agents = [{
+            'label': agent[1]['username'],
+            'value': agent[1]['user_id']
+        }
+            for agent in available_agents.iterrows()]
         return html.Div([
             html.H2(self.text, style={'text-align': 'center'}),
             html.Div([
                 html.Label('Выберите менеджера:'),
                 dcc.Dropdown(
                     id='agent-dropdown',
-                    options=[{
-                        'label': agent[1]['username'],
-                        'value': agent[1]['user_id']
-                    }
-                        for agent in available_agents.iterrows()],
-                    value=available_metrics[0],
+                    options=options_agents,
+                    value=options_agents[2]['value'],
                     multi=False
                 ),
             ]),
@@ -38,7 +39,7 @@ class KPI:
                 dcc.Dropdown(
                     id='metric-dropdown',
                     options=[{'label': metric, 'value': metric} for metric in available_metrics],
-                    value=available_metrics[2],
+                    value=available_metrics[4:7],
                     multi=True
                 ),
             ]),

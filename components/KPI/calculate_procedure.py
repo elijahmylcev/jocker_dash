@@ -1,5 +1,7 @@
 import pandas as pd
 from datetime import datetime
+from tqdm import tqdm
+import calendar
 from sqlalchemy import text
 from functions import get_engine
 from dateutil.relativedelta import relativedelta
@@ -19,13 +21,17 @@ class CalculateKPI:
 
     def process(self) -> None:
         df_list = []
-        for _date in self.date_range:
+        for _date in tqdm(self.date_range, desc='Processing Dates'):
             for user in self.users:
+                _, last_day = calendar.monthrange(_date.year, _date.month)
+                date_c = datetime(_date.year, _date.month, last_day).strftime('%Y-%m-%d')
                 query = self.get_request(_date.month, _date.year, user)
-                df_list.append(pd.read_sql(query, self.engine))
+                df = pd.read_sql(query, self.engine)
+                df['calculate_date'] = date_c
+                df_list.append(df)
         df = pd.concat(df_list)
         try:
-            df.to_csv(self.out)
+            df.to_csv(self.out, index=False)
         except Exception as e:
             print(str(e))
 
@@ -61,7 +67,7 @@ class CalculateKPI:
             SELECT * FROM (
                 SELECT 
                   {id_agent} AS id_agent, 
-                  {month} as month,
+                  {0} as calculate_date,
                   SUM(
                     CASE WHEN (
                       MONTH(complete_date) = {month} 
@@ -138,4 +144,4 @@ class CalculateKPI:
 
 if __name__ == '__main__':
     date = CalculateKPI(output_file='KPI_result.csv', engine=get_engine())
-    print(date.process())
+    date.process()
