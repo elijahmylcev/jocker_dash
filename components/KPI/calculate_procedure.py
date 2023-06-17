@@ -21,8 +21,10 @@ class CalculateKPI:
 
     def process(self) -> None:
         df_list = []
-        for _date in tqdm(self.date_range, desc='Processing Dates'):
-            for user in self.users:
+        for _date in tqdm(self.date_range.keys(), desc='Processing Dates'):
+            list_agents = self.engine.execute(f'SELECT id FROM fos_user WHERE created_at < DATE("{_date}")').fetchall()
+            list_agents = [agent[0] for agent in list_agents]
+            for user in list_agents:
                 _, last_day = calendar.monthrange(_date.year, _date.month)
                 date_c = datetime(_date.year, _date.month, last_day).strftime('%Y-%m-%d')
                 query = self.get_request(_date.month, _date.year, user)
@@ -48,16 +50,16 @@ class CalculateKPI:
         filtered_users = list(filter(lambda x: x is not None, users))
         return filtered_users
 
-    def get_range(self) -> list:
+    def get_range(self) -> dict:
         """
 
         :return: Массив дат от старта до предыдущего месяца с шагом 1 месяц
         """
         end_date = datetime.now() - relativedelta(months=1)
-        date_range = []
+        date_range = {}
         current_date = self.get_start()
         while current_date < end_date:
-            date_range.append(current_date)
+            date_range[current_date] = []
             current_date += relativedelta(months=1)
         return date_range
 

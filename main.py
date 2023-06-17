@@ -39,8 +39,9 @@ app.layout = html.Div([
     ]),
     dcc.Store(id='initial-data', data=KPI.df.to_json(orient='records'), storage_type='memory'),
     dcc.Store(id='filtered-data', storage_type='memory'),
-    dcc.Store(id='selected-metrics', data=['successful_deals', 'average_deal_size'], storage_type='memory'),
-    dcc.Store(id='selected-agents', data=13, storage_type='memory')
+    dcc.Store(id='selected-metrics', data=['profit'], storage_type='memory'),
+    dcc.Store(id='selected-agents', data=13, storage_type='memory'),
+    # dcc.Store(id='kpi-table', data=KPI.table.to_json(orient='records'), storage_type='memory')
 ])
 
 
@@ -75,7 +76,7 @@ def update_graph(data):
     filtered_df = pd.read_json(data, orient='records')
     data = []
     for metric in filtered_df.columns:
-        if metric != 'calculate_date':
+        if metric not in ['calculate_date', 'id_agent', 'id_agent.1']:
             scatter = go.Scatter(
                 x=filtered_df['calculate_date'],
                 y=filtered_df[metric],
@@ -100,6 +101,24 @@ def update_graph(data):
 
     return fig
 
+
+# @app.callback(
+#     dash.Output('kpi_table', 'figure'),
+#     dash.Input('kpi-table', 'data'),
+# )
+# def update_graph(data):
+#     table = pd.read_json(data, orient='records')
+#     if data is None:
+#         # Если данные не доступны, отображаем пустой график
+#         return {}
+#     return dash.dash_table.DataTable(
+#                 id='kpi_table',
+#                 columns=[{'name': i, 'id': i} for i in table.columns],
+#                 data=table.to_dict('records'),
+#                 sort_action='native',
+#                 sort_mode='multi',
+#                 style_cell={'textAlign': 'center'}
+#             )
 
 # Для реакции на изменение метрик
 # @app.callback(
@@ -156,14 +175,18 @@ def update_graph(data):
         dash.Output('filtered-data', 'data'),
         dash.Output('selected-metrics', 'data'),
         dash.Output('selected-agents', 'data'),
+        # dash.Output('kpi-table', 'data'),
+        dash.Output('kpi_table', 'data')
     ],
     [
         dash.Input('agent-dropdown', 'value'),
         dash.Input('initial-data', 'data'),
-        dash.Input('metric-dropdown', 'value')
+        dash.Input('metric-dropdown', 'value'),
+        # dash.State('kpi-table', 'data'),
+        dash.State('selected-agents', 'data')
     ]
 )
-def update_data(selected_agents, initial_data, selected_metrics):
+def update_data(selected_agents, initial_data, selected_metrics, current_agent):
     # Преобразование JSON-строки в исходный датафрейм
     initial_df = pd.read_json(initial_data, orient='records')
     # Фильтрация датафрейма по указанному идентификатору
@@ -173,7 +196,13 @@ def update_data(selected_agents, initial_data, selected_metrics):
     else:
         columns = ['calculate_date']
     filtered_df = filtered_df[columns]
-    return filtered_df.to_json(orient='records'), list(columns), selected_agents
+    print(current_agent, selected_agents)
+    if current_agent != selected_agents:
+        kpi_table = KPI.get_table(selected_agents)
+        print(kpi_table)
+    else:
+        kpi_table = KPI.table
+    return filtered_df.to_json(orient='records'), list(columns), selected_agents, kpi_table.to_dict('records')
 
 
 if __name__ == '__main__':

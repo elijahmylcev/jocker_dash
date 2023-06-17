@@ -2,6 +2,7 @@ import pandas as pd
 import dash_core_components as dcc
 import dash_html_components as html
 from functions import get_agents
+from dash import dash_table
 import dash_bootstrap_components as dbc
 import plotly.express as px
 
@@ -10,19 +11,29 @@ class KPI:
     def __init__(self, text, engine, agent=13):
         self.text = text
         self.engine = engine
-        self.df = None
+        self.df = pd.read_csv('components/KPI/KPI_result.csv')
         self.agent = agent
+        self.average_metrics = None
+        self.table = self.get_table(self.agent)
 
     def process(self):
         # df = self.execute_query(self.agent, 2022)
-        self.df = pd.read_csv('components/KPI/KPI_result.csv')
+        # self.df = pd.read_csv('components/KPI/KPI_result.csv')
         available_agents = get_agents('fos_user', self.engine)
+        self.get_average_metrics(metrics=['successful_deals',
+                                          'profit',
+                                          'average_deal_size',
+                                          'assigned_tasks',
+                                          'completed_tasks',
+                                          'overdue_tasks_percentage'
+                                          ])
         available_metrics = self.df.columns
         options_agents = [{
             'label': agent[1]['username'],
             'value': agent[1]['user_id']
         }
             for agent in available_agents.iterrows()]
+        table = self.get_table(self.agent)
         return html.Div([
             html.H2(self.text, style={'text-align': 'center'}),
             html.Div([
@@ -38,13 +49,39 @@ class KPI:
                 html.Label('Выберите метрики:'),
                 dcc.Dropdown(
                     id='metric-dropdown',
-                    options=[{'label': metric, 'value': metric} for metric in available_metrics],
-                    value=available_metrics[4:7],
+                    options=[{'label': metric, 'value': metric}
+                             for metric in available_metrics
+                             if metric not in ['calculate_date', 'id_agent', 'id_agent.1']
+                             ],
+                    value=[available_metrics[3]],
                     multi=True
                 ),
             ]),
             dcc.Graph(id='kpi'),
+            dash_table.DataTable(
+                id='kpi_table',
+                columns=[{'name': i, 'id': i}
+                         for i in table.columns
+                         if i not in ['id_agent', 'id_agent.1']
+                         ],
+                data=table.to_dict('records'),
+                sort_action='native',
+                sort_mode='multi',
+                style_cell={'textAlign': 'center'}
+            )
         ])
+
+    def get_average_metrics(self, metrics):
+        self.average_metrics = self.df[[*metrics]].mean().round(2)
+        print(self.average_metrics)
+
+    def get_table(self, user_id):
+        if user_id:
+            table = self.df[self.df['id_agent'] == user_id]
+            self.table = table
+        else:
+            table = None
+        return table
 
     def execute_query(self, id_agent, year):
         """
@@ -59,7 +96,6 @@ class KPI:
         result_df = pd.concat(dataframes)
         self.df = result_df
         return result_df
-
 
     @staticmethod
     def get_query(month, year, id_agent):
