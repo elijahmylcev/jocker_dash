@@ -1,1 +1,1 @@
-from .funnel import create_funnel
+from .funnel import Funnel

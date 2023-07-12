@@ -1,8 +1,6 @@
 import pandas as pd
-import dash_core_components as dcc
-import dash_html_components as html
 from functions import get_agents
-from dash import dash_table
+from dash import dash_table, dcc, html
 import dash_bootstrap_components as dbc
 import plotly.express as px
 
@@ -58,6 +56,35 @@ class KPI:
                 ),
             ]),
             dcc.Graph(id='kpi'),
+            html.Div(children=[
+                dbc.Row([
+                    dbc.Col(
+                        dcc.Graph(id='kpi_average', figure=px.bar(
+                            x=[
+                                'successful_deals',
+                                'assigned_tasks',
+                                'completed_tasks',
+                                'overdue_tasks_percentage'
+                            ],
+                            y=self.average_metrics[['successful_deals', 'assigned_tasks', 'completed_tasks', 'overdue_tasks_percentage']],
+                            barmode='group'),
+                            style={'backgroundColor': 'transparent'}
+                        ),
+                        width=6
+                    ),
+                    dbc.Col(
+                        dcc.Graph(id='kpi_average_profit', figure=px.bar(
+                            x=[
+                               'profit',
+                               'average_deal_size'
+                            ],
+                            y=self.average_metrics[['profit', 'average_deal_size']],
+                            barmode='group')
+                        ),
+                        width=6
+                    )
+                ])
+            ]),
             dash_table.DataTable(
                 id='kpi_table',
                 columns=[{'name': i, 'id': i}

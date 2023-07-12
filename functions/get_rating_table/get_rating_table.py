@@ -4,6 +4,7 @@ import requests
 from functions import get_df_from_table,get_agents
 from config import API_TOKEN, URL_API
 
+
 def get_rating_table(engine, start, end, now):
   # Leads
   payload = {"token": API_TOKEN}
