@@ -61,17 +61,6 @@ class KPI:
                 figure=fig
             )
 
-            # fig = dcc.Graph(
-            #     id=f'kpi_average_{scale}',
-            #     figure=px.bar(
-            #             x=[scale, f'agent_{scale}'],
-            #             y=[self.average_metrics[scale], len(scale)],
-            #             # barmode='group',
-            #     ).update_traces(
-            #         marker={'line': {'width': 1}},
-            #         xaoxis=None
-            #     )
-            # )
             result.append(
                 dbc.Col([
                     html.P(f'{scale}'),

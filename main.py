@@ -93,7 +93,8 @@ def update_graph(data):
 @app.callback(
     [
         dash.Output('funnel', 'figure'),
-        dash.Output('funnel_avg', 'figure')
+        dash.Output('funnel_avg', 'figure'),
+        dash.Output('conversion_log', 'children')
     ],
     [
         dash.Input('funnel_agent', 'value'),
@@ -128,7 +129,9 @@ def update_graph(agent, start_date, end_date):
         margin={"l": 150, "r": 50, "t": 100, "b": 100}
     )
 
-    return fig_funnel, fig_funnel_avg
+    conversion_log = Funnel.get_leader_conversion()
+
+    return fig_funnel, fig_funnel_avg, conversion_log
 
 
 # @app.callback(

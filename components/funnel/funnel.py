@@ -13,12 +13,13 @@ class Funnel:
         self.dataframe = None
         self.agent = agent
         self.agents = agents
+        self.conversion = None
         self.data = [
             {"stage": "Новый лид", "value": 1000, "status": [1, 8]},
             {"stage": "Первый контакт", "value": 800, "status": [2, 9]},
             {"stage": "Встреча состоялась", "value": 600, "status": [3]},
-            {"stage": "Ипотека открыта", "value": 200, "status": [4, 10]},
             {"stage": "Залог/Аванс/Бронь", "value": 400, "status": [5]},
+            {"stage": "Ипотека открыта", "value": 200, "status": [4, 10]},
             {"stage": "Подписаний договоров", "value": 56, "status": [6, 12]},
           ]
 
@@ -51,32 +52,16 @@ class Funnel:
             .reset_index(name='count')
         start_num_deals = result[result['status'].isin([1, 8])].groupby('user_id')['count'].sum()
         successful_deals = result[result['status'].isin([6, 12])].groupby('user_id')['count'].sum()
-        conversion = (successful_deals / start_num_deals) * 100
-        print(conversion)
-        agent_min_conversion = conversion.idxmin()
-        agent_max_conversion = conversion.idxmax()
+        self.conversion = (successful_deals / start_num_deals) * 100
 
-        print("Агент с минимальной конверсией:", agent_min_conversion)
-        print("Агент с максимальной конверсией:", agent_max_conversion)
-
-        # print(total_count)
-        # conversion_rates = {}
-        # for user in result['user_id'].unique():
-        #     user_data = result[result['user_id'] == user]
-        #     stages_count = user_data['count'].sum()
-        #     if user in total_count.index:
-        #         conversion_rates[user] = stages_count / total_count[user]
-        #     else:
-        #         conversion_rates[user] = 0
-        # for user, conversion_rate in conversion_rates.items():
-        #     print(f"Пользователь {user}: Конверсия - {conversion_rate}")
         average_df = result.groupby('status')['count'].mean().reset_index()
         copied_data = copy.deepcopy(self.data)
         for item in copied_data:
             status = item.get('status', None)
             if status:
                 filtered_row = average_df[(average_df['status'].isin(status))]
-                count_value = filtered_row['count'].values[0] or 0
+                count_value = filtered_row['count'].values
+                count_value = count_value[0] if len(count_value) else 0
                 item["value"] = round(count_value, 2)
         return copied_data
 
@@ -113,6 +98,40 @@ class Funnel:
                 item["value"] = count_value
 
         return self.data
+
+    def get_leader_conversion(self, ):
+        print(self.conversion)
+        agent_min_conversion = self.conversion.idxmin() if len(self.conversion) else None
+        agent_max_conversion = self.conversion.idxmax() if len(self.conversion) else None
+
+        if agent_max_conversion and agent_min_conversion:
+            print("Агент с минимальной конверсией:", agent_min_conversion)
+            print("Агент с максимальной конверсией:", agent_max_conversion)
+            conversion_min = self.conversion.loc[agent_min_conversion]
+            conversion_max = self.conversion.loc[agent_max_conversion]
+            agent_max_conversion_name = self.agents[self.agents['user_id'] == agent_max_conversion]['username'].values[0]
+            agent_min_conversion_name = self.agents[self.agents['user_id'] == agent_min_conversion]['username'].values[0]
+            children = [
+                dbc.Alert(
+                    f"Агент с минимальной конверсией: {agent_min_conversion_name} (Конверсия: {conversion_min:.2f}%)",
+                    color="danger",
+                    style={"margin": "10px"}
+                ),
+                dbc.Alert(
+                    f"Агент с максимальной конверсией: {agent_max_conversion_name} (Конверсия: {conversion_max:.2f}%)",
+                    color="success",
+                    style={"margin": "10px"}
+                )
+            ]
+        else:
+            children = [
+                dbc.Alert(
+                    f"За указанный промежуток нет успешных сделок",
+                    color="warning",
+                    style={"margin": "10px"}
+                )
+            ]
+        return children
 
     def process(self):
         df = self.execute_query()
@@ -151,6 +170,9 @@ class Funnel:
                     ]),
                 ], width=6)
             ]),
+            html.Div(
+                id='conversion_log',
+            ),
             dbc.Row(children=[
                 dbc.Col(children=[
                     dcc.Graph(
