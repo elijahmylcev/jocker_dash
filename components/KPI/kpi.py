@@ -10,6 +10,7 @@ class KPI:
         self.text = text
         self.engine = engine
         self.df = pd.read_csv('components/KPI/KPI_result.csv')
+        self.df = self.df.fillna(0)
         self.agent = agent
         self.agents = agents
         self.average_metrics = None

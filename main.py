@@ -69,6 +69,7 @@ def update_graph(data):
                 x=filtered_df['calculate_date'],
                 y=filtered_df[metric],
                 mode='lines+markers',
+                line_shape='spline',
                 name=metric
             )
             data.append(scatter)
